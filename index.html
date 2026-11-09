@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Revision Planner">
+<title>Higher Chemistry Revision Planner</title>
+<style>
+  :root {
+    --paper: #f5f7fa;
+    --sheet: #ffffff;
+    --ink: #14213d;
+    --soft: #56627a;
+    --rule: #d9dee7;
+    --navy: #1f3a68;
+    --navy-tint: #e8edf6;
+    --red: #cf3f4f;
+    --red-tint: #fbe9eb;
+    --amber: #e39b1b;
+    --amber-tint: #fdf3df;
+    --green: #2f9466;
+    --green-tint: #e4f4ec;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10151f; --sheet: #182030; --ink: #e9edf5; --soft: #9ba6bb;
+      --rule: #2b3549; --navy: #9cb8ec; --navy-tint: #1f2b42;
+      --red-tint: #3a1e24; --amber-tint: #3a2f17; --green-tint: #173326;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10151f; --sheet: #182030; --ink: #e9edf5; --soft: #9ba6bb;
+    --rule: #2b3549; --navy: #9cb8ec; --navy-tint: #1f2b42;
+    --red-tint: #3a1e24; --amber-tint: #3a2f17; --green-tint: #173326;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 17px/1.5 var(--sans);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+
+  header.top {
+    max-width: 780px; margin: 0 auto; padding: 28px 16px 8px;
+  }
+  .kicker { color: var(--soft); font-size: 0.95rem; margin: 0; }
+  h1 { font-family: var(--serif); font-weight: 600; font-size: 2rem; line-height: 1.15; margin: 4px 0 18px; }
+  h2 { font-family: var(--serif); font-weight: 600; font-size: 1.45rem; line-height: 1.2; margin: 0 0 6px; }
+  h3 { font-family: var(--serif); font-weight: 600; font-size: 1.15rem; margin: 0 0 6px; }
+  .lede { color: var(--soft); margin: 0 0 20px; max-width: 62ch; }
+
+  .who { display: grid; grid-template-columns: 1fr 140px; gap: 10px; }
+  .who label { display: block; font-size: 0.85rem; color: var(--soft); margin-bottom: 4px; }
+  .who input {
+    width: 100%; height: 46px; padding: 0 12px; border-radius: 10px;
+    border: 1.5px solid var(--rule); background: var(--sheet);
+  }
+
+  nav.steps {
+    position: sticky; top: 0; z-index: 5; background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+  nav.steps ol {
+    list-style: none; margin: 0 auto; padding: 8px 12px; max-width: 780px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  }
+  nav.steps button {
+    width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: transparent;
+    color: var(--soft); font-weight: 600; font-size: 0.95rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  nav.steps button .n {
+    width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid currentColor;
+    display: inline-grid; place-items: center; font-size: 0.85rem;
+  }
+  nav.steps button[aria-current="step"] { background: var(--navy); color: #fff; }
+  :root[data-theme="dark"] nav.steps button[aria-current="step"] { color: #10151f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) nav.steps button[aria-current="step"] { color: #10151f; } }
+
+  main { max-width: 780px; margin: 0 auto; padding: 22px 16px 60px; }
+  section.panel { display: none; }
+  section.panel.on { display: block; }
+
+  .sheet {
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px;
+    padding: 6px 18px; margin-bottom: 20px;
+  }
+
+  /* mark entry */
+  .group-title { font-family: var(--serif); font-size: 1.05rem; color: var(--navy); margin: 18px 0 2px; }
+  .qrow {
+    display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--rule);
+  }
+  .qrow:last-child { border-bottom: 0; }
+  .qnum { font-family: var(--serif); font-weight: 600; font-size: 1.15rem; }
+  .qdesc { color: var(--soft); font-size: 0.9rem; line-height: 1.35; }
+  .seg { display: flex; gap: 6px; }
+  .seg button {
+    width: 46px; height: 46px; border-radius: 10px; border: 1.5px solid var(--rule);
+    background: var(--paper); font-weight: 600; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+  :root[data-theme="dark"] .seg button[aria-pressed="true"] { color: #10151f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button[aria-pressed="true"] { color: #10151f; } }
+
+  .totalbar {
+    position: sticky; bottom: 0; z-index: 4; margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--paper); border-top: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .totalbar .t { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .totalbar .t small { font-family: var(--sans); font-size: 0.85rem; font-weight: 400; color: var(--soft); display: block; }
+
+  .btn {
+    min-height: 48px; padding: 0 20px; border-radius: 12px; border: 0; cursor: pointer;
+    background: var(--navy); color: #fff; font-weight: 600;
+  }
+  :root[data-theme="dark"] .btn { color: #10151f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn { color: #10151f; } }
+  .btn.quiet { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+
+  /* element tiles */
+  .tile {
+    position: relative; width: 78px; height: 84px; flex: none; border-radius: 6px;
+    border: 2px solid var(--c, var(--rule)); background: var(--ct, var(--paper));
+    display: grid; grid-template-rows: auto 1fr auto; padding: 4px 6px;
+  }
+  .tile .code { font-size: 0.72rem; font-weight: 700; line-height: 1; }
+  .tile .big { font-family: var(--serif); font-weight: 600; font-size: 1.55rem; align-self: center; text-align: center; font-variant-numeric: tabular-nums; }
+  .tile .sec { font-size: 0.68rem; text-align: center; color: var(--soft); line-height: 1; }
+  .r { --c: var(--red); --ct: var(--red-tint); }
+  .a { --c: var(--amber); --ct: var(--amber-tint); }
+  .g { --c: var(--green); --ct: var(--green-tint); }
+  .u { --c: var(--rule); --ct: var(--paper); }
+
+  .table { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+
+  .prow {
+    display: grid; grid-template-columns: 30px 78px 1fr; gap: 14px; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid var(--rule);
+  }
+  .prow:last-child { border-bottom: 0; }
+  .prow .rank { font-family: var(--serif); font-size: 1.3rem; color: var(--soft); text-align: right; }
+  .prow .name { font-weight: 600; }
+  .prow .meta { color: var(--soft); font-size: 0.88rem; }
+  .why { color: var(--soft); font-size: 0.88rem; margin-top: 2px; }
+
+  .bars { display: grid; gap: 10px; padding: 12px 0; }
+  .bar { display: grid; grid-template-columns: 170px 1fr 52px; gap: 10px; align-items: center; font-size: 0.92rem; }
+  .bar .track { height: 12px; border-radius: 6px; background: var(--navy-tint); overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 6px; background: var(--c); }
+  .bar .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .note {
+    border-left: 4px solid var(--navy); background: var(--navy-tint); border-radius: 0 10px 10px 0;
+    padding: 12px 14px; margin: 14px 0; font-size: 0.95rem;
+  }
+  .empty { color: var(--soft); padding: 24px 0; }
+
+  /* reflection */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+  .chip {
+    min-height: 42px; padding: 0 14px; border-radius: 21px; border: 1.5px solid var(--rule);
+    background: var(--paper); cursor: pointer; font-size: 0.93rem;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--navy); background: var(--navy-tint); color: var(--navy); font-weight: 600; }
+  textarea {
+    width: 100%; min-height: 96px; padding: 12px; border-radius: 10px;
+    border: 1.5px solid var(--rule); background: var(--paper); resize: vertical;
+  }
+  .refl { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .refl:last-child { border-bottom: 0; }
+  .refl .head { display: flex; gap: 12px; align-items: center; }
+
+  /* plan */
+  .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px 18px; }
+  .settings .lab { font-size: 0.88rem; color: var(--soft); margin-bottom: 6px; }
+  .week h3 { margin-top: 26px; color: var(--navy); }
+  .session { background: var(--sheet); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; margin: 10px 0; }
+  .session.final { border: 2px solid var(--navy); }
+  .shead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .shead .t { font-weight: 700; }
+  .shead .rate { display: flex; gap: 6px; align-items: center; }
+  .ratelab { margin-right: 4px; }
+  .rate button {
+    width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--c); background: transparent; cursor: pointer;
+  }
+  .rate button[aria-pressed="true"] { background: var(--c); }
+  .focus { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0 4px; }
+  .focus .mini {
+    flex: none; min-width: 46px; height: 46px; border-radius: 5px; border: 2px solid var(--c); background: var(--ct);
+    display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; padding: 0 4px;
+  }
+  .focus .fname { font-weight: 600; line-height: 1.3; }
+  .focus .fsub { font-size: 0.86rem; color: var(--soft); }
+  ul.items { list-style: none; margin: 4px 0 6px 56px; padding: 0; }
+  ul.items li { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  ul.items input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--navy); flex: none; }
+  ul.items a { color: var(--navy); text-underline-offset: 3px; }
+  ul.items .tag { font-size: 0.78rem; color: var(--soft); }
+  .unsched { color: var(--soft); font-size: 0.93rem; }
+
+  .print-only { display: none; }
+  .tiny { font-size: 0.8rem; color: var(--soft); }
+  footer { max-width: 780px; margin: 0 auto; padding: 0 16px 40px; }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 1.6rem; }
+    nav.steps button { flex-direction: column; gap: 2px; font-size: 0.75rem; }
+    .qrow { grid-template-columns: 52px 1fr; }
+    .qrow .seg { grid-column: 1 / -1; }
+    .bar { grid-template-columns: 110px 1fr 46px; }
+    .settings { grid-template-columns: 1fr; }
+    ul.items { margin-left: 0; }
+    .who { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    @page { margin: 14mm; }
+    body { background: #fff; color: #000; font-size: 11pt; }
+    :root { --paper: #fff; --sheet: #fff; --ink: #000; --soft: #444; --rule: #bbb; --navy: #1f3a68; --navy-tint: #eef1f7; }
+    nav.steps, .totalbar, .btnrow, .settings, .no-print, #p-marks, .lede, .chip[aria-pressed="false"] { display: none !important; }
+    body { font-size: 9.5pt; line-height: 1.35; }
+    h1 { font-size: 17pt; margin-bottom: 8px; }
+    h2 { font-size: 13pt; margin: 10px 0 6px; }
+    h3 { font-size: 11pt; }
+    main { padding: 0 0 10px; }
+    .sheet { padding: 2px 10px; margin-bottom: 8px; border-radius: 8px; break-inside: auto; }
+    .prow, .refl, .bar { break-inside: avoid; }
+    .tile { width: 52px; height: 56px; padding: 2px 4px; }
+    .tile .big { font-size: 13pt; }
+    .tile .code, .tile .sec { font-size: 6.5pt; }
+    .table { gap: 4px; }
+    .prow { grid-template-columns: 18px 52px 1fr; gap: 8px; padding: 4px 0; }
+    .prow .rank { font-size: 11pt; }
+    .bars { gap: 4px; padding: 6px 0; }
+    .bar { grid-template-columns: 150px 1fr 40px; font-size: 8.5pt; }
+    .bar .track { height: 8px; }
+    .note { padding: 6px 10px; margin: 6px 0; }
+    .refl { padding: 6px 0; }
+    .chip { min-height: 0; padding: 2px 8px; font-size: 8.5pt; }
+    textarea { min-height: 0; height: auto; border: 0; padding: 0; }
+    .week { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; align-items: start; }
+    .week h3 { grid-column: 1 / -1; margin: 8px 0 0; break-after: avoid; }
+    .session { margin: 0; padding: 6px 9px; border-radius: 8px; }
+    .session.final { grid-column: 1 / -1; }
+    .shead { margin-bottom: 0; }
+    .rate button { width: 16px; height: 16px; border-width: 1.5px; }
+    .focus { padding: 4px 0 0; gap: 6px; }
+    .focus .mini { min-width: 30px; height: 26px; font-size: 7pt; border-width: 1.5px; }
+    .focus .fsub { font-size: 7.5pt; }
+    ul.items { margin: 2px 0 2px 36px; }
+    ul.items li { padding: 1px 0; gap: 6px; font-size: 8.5pt; }
+    ul.items input[type="checkbox"] { width: 12px; height: 12px; }
+    ul.items .tag { font-size: 7pt; }
+    section.panel { display: block !important; }
+    .print-only { display: block; }
+    header.top { padding-top: 0; }
+    .who input { border: 0; border-bottom: 1px solid #999; border-radius: 0; height: 30px; }
+    .sheet, .session { break-inside: avoid; border-color: #999; }
+    .week { break-before: auto; }
+    .tile, .focus .mini { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bar .fill, .bar .track { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #p-plan { break-before: page; }
+    a { color: #000; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p class="kicker">Higher Chemistry prelim revision</p>
+  <h1 id="title">Unit 1 test: from marks to a revision plan</h1>
+  <div class="who">
+    <div><label for="name">Name</label><input id="name" autocomplete="off"></div>
+    <div><label for="cls">Class</label><input id="cls" autocomplete="off"></div>
+  </div>
+</header>
+
+<nav class="steps" aria-label="Steps">
+  <ol>
+    <li><button data-step="marks"><span class="n">1</span>Marks</button></li>
+    <li><button data-step="pri"><span class="n">2</span>Priorities</button></li>
+    <li><button data-step="refl"><span class="n">3</span>Reflect</button></li>
+    <li><button data-step="plan"><span class="n">4</span>Plan</button></li>
+  </ol>
+</nav>
+
+<main>
+  <!-- 1. MARKS -->
+  <section class="panel" id="p-marks">
+    <h2>Enter your marks</h2>
+    <p class="lede">Use your marked paper. Tap the mark you got for each question.</p>
+    <div id="qlist"></div>
+    <div class="totalbar">
+      <div class="t" id="total">0 / 30<small>0 of 21 questions entered</small></div>
+      <button class="btn" data-go="pri">See my priorities</button>
+    </div>
+  </section>
+
+  <!-- 2. PRIORITIES -->
+  <section class="panel" id="p-pri">
+    <h2>Your priorities</h2>
+    <p class="lede">Ranked by how many marks you dropped and how often the topic comes up in SQA papers. Top of the list is where revision pays off most.</p>
+    <div id="pri"></div>
+  </section>
+
+  <!-- 3. REFLECT -->
+  <section class="panel" id="p-refl">
+    <h2>Reflect on your top three</h2>
+    <p class="lede">Be honest. Knowing why you lost marks decides how you revise.</p>
+    <div id="refl"></div>
+  </section>
+
+  <!-- 4. PLAN -->
+  <section class="panel" id="p-plan">
+    <h2>Your revision plan</h2>
+    <p class="lede no-print">Every question below is a real SQA past paper question. Tap the paper to open it, answer, then mark yourself with the marking instructions on JABchem. Tick it off and rate the session.</p>
+    <div class="print-only" id="print-intro"></div>
+    <div class="sheet settings">
+      <div><div class="lab">Weeks</div><div class="seg" id="set-weeks"></div></div>
+      <div><div class="lab">Sessions per week (about 40 minutes each)</div><div class="seg" id="set-spw"></div></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="print">Save as PDF / print</button>
+      <button class="btn quiet" id="shuffle">Swap in different questions</button>
+      <button class="btn quiet" id="copy">Copy my results for my teacher</button>
+    </div>
+    <div id="plan"></div>
+  </section>
+</main>
+
+<footer class="no-print">
+  <p class="tiny">Your marks stay on this device. Nothing is sent anywhere. Question references from the JABchem Higher Question Bank; past papers © SQA.</p>
+</footer>
+
+<script>
+const DATA = {"bank":{"2a":["H2024:L9b(iv)"],"3":["H2015:mc1","H2015:L1a","H2017:mc4","H2017:L1a","H2019:L3","H2020:L2a(i)","H2020:L2a(ii)","H2022:mc1","H2023:mc9","H2025:L2a","H2026:mc1","R2012:mc2","R2012:mc3","R2012:L1a(i)","R2013:mc2","R2014:L1a","R2014:L1c(iii)","R2015:mc1","R2015:L1a","O2000:L10a","O2001:mc9","O2003:mc10","O2004:L1a","O2005:mc13","O2006:L2b","O2008:mc15","O2009:mc15","O2010:L1","O2011:mc1","O2012:mc12","O2012:mc13","O2012:L1a","O2013:mc15","O2014:L1a","O2015:L1a"],"4":["H2015:L1b(ii)","H2016:L2a(i)","H2016:L2a(ii)","H2018:L2a","H2019:L2c","H2019:L2d","H2020:mc2","H2022:L1a(ii)","H2023:mc8","H2024:mc2","H2025:L1a(iv)","H2025:L2b(i)","H2025:L2b(ii)","H2026:mc3","H2026:L3","R2012:L1a(ii)","R2013:mc3","R2014:L1b","R2015:L1b(ii)","O2000:mc8","O2001:L12a","O2001:L12b","O2004:L9a","O2004:L9b","O2006:L2a","O2007:L1b","O2011:mc11","O2012:L1b","O2013:mc12","O2014:L1c","O2015:L1b(ii)"],"5":["H2015:mc2","H2016:mc1","H2017:L1b(ii)","H2018:mc4","H2019:L2b(i)","H2019:L2b(ii)","H2020:mc6","H2022:mc2","H2022:L1b(i)","H2023:L1a(iii)A","H2023:L1a(iii)B","H2024:L1a(i)","H2024:L1a(ii)","H2025:mc22","H2025:L1a(i)","H2025:L1a(ii)","H2026:mc4","H2026:L12c(i)","H2026:L12c(ii)","R2013:L1a(i)","R2015:mc3","O2000:L13a","O2000:L13b","O2003:mc9","O2004:mc11","O2005:mc9","O2006:mc3","O2006:mc13","O2007:mc7","O2008:mc11","O2009:mc11","O2010:mc10","O2011:mc32","O2011:L2a(ii)","O2013:L4a(i)","O2014:mc3","O2015:mc9"],"6":["H2017:L1b(i)","H2017:L1b(iii)","H2019:L2a(i)","H2019:L2a(ii)","H2022:L1b(ii)","H2023:L1a(i)","H2023:L1a(ii)","H2024:mc1","H2025:L1a(iii)","H2026:L3","R2013:L1a(ii)","R2014:mc1","R2015:mc2","R2015:mc4","O2002:L1b","O2002:L1c","O2006:mc12","O2007:L1c","O2008:mc9","O2009:mc10","O2009:L1b","O2010:L11a(i)","O2011:L2a(i)","O2013:L4a(ii)","O2014:mc13","O2015:mc8","O2015:mc10"],"7":["H2015:mc3","H2018:L1a(i)","H2020:L1a(ii)","H2020:L1b(i)","H2020:L1b(ii)","H2020:L1b(iii)B","H2023:L1b(i)","R2013:mc1","O2000:L7a","O2002:L1a","O2004:mc9","O2005:mc10","O2007:L1a","O2008:mc10","O2011:L2b","O2013:mc11"],"8":["H2018:L1a(ii)","H2020:L1a(i)","H2020:L1a(iii)","H2023:L1b(ii)","H2026:L3","R2012:L1b","O2001:mc8","O2009:L1a"],"9":["H2015:L1b(i)","H2022:L1a(i)","R2015:L1b(i)","O2015:L1b(i)"],"10a":["H2017:mc1","H2018:L2b(i)","H2019:mc1","H2019:L12b(i)","H2020:L1c","H2022:L3","H2024:L3a(ii)","R2012:mc4","R2012:L7b","R2012:L7c","O2006:L2c","O2009:mc12","O2010:mc11","O2011:mc12","O2012:mc10"],"10b":["H2016:mc2","R2012:mc1","O2000:mc9"],"11":["H2020:L4c(iii)","H2024:L2a(iii)","H2025:L1b(i)","H2025:L4c(iii)A","H2026:L1a(i)","H2026:L1a(ii)A","H2026:L1b(i)","H2026:L1b(ii)"],"12a":["H2016:mc3","H2023:mc1","H2024:mc3","H2025:mc1","H2025:L3","H2026:mc2","H2026:L1a(ii)B","R2014:mc3","O2003:mc8","O2007:mc8","O2009:mc9","O2014:mc14"],"13":["H2016:L3a","H2018:L2c(i)","H2023:L2b(iii)","H2024:L2c","H2024:L9a(ii)","R2013:mc4","R2013:L7b(i)","O2000:mc1","O2000:mc10","O2001:mc11","O2001:L11b","O2003:mc1","O2003:mc13","O2004:mc1","O2004:L1b","O2005:mc11","O2005:L6b(i)","O2006:mc2","O2006:L1","O2007:mc2","O2007:mc10","O2007:mc11","O2008:L1","O2010:mc14","O2011:mc13","O2013:mc1","O2013:mc14","O2014:L1b","O2015:mc2"],"15":["H2015:mc4","O2001:mc10"],"16":["H2020:L7c(i)","H2024:L1b","H2026:L2a","R2014:mc2","O2002:L7a","O2003:L12","O2008:L9a","O2014:mc12"],"17":["H2015:L1b(iii)","H2017:L1c","H2018:L1b","H2020:L7c(ii)","H2022:L1c(ii)","H2023:L2a(i)","H2023:L9a(i)","H2025:L2c","R2013:mc5","R2014:mc4","R2015:L1b(iii)","O2004:mc10","O2009:L1c","O2010:mc9","O2013:mc13","O2015:L1b(iii)"],"18/20":["H2017:L6c","H2018:L4c","H2019:mc16","H2023:L9a(ii)","H2026:L2c","R2012:L6b","O2001:L5b","O2010:L7a","O2012:L6b(ii)"],"19":["H2018:L2b(ii)","H2019:mc2","H2020:mc3","H2023:L7c(i)","H2024:L7c","R2014:mc5","O2002:mc8","O2004:mc12","O2007:mc12","O2008:mc14","O2009:mc16","O2010:mc13","O2014:mc15"],"21/22c":["H2019:L8a(ii)","H2022:mc3","H2026:L8c","O2009:mc14"],"22a/22b":["H2015:mc5","H2015:L12c(i)","H2016:L12a(i)","H2019:L6a(i)A","H2019:L6a(ii)B","H2022:L1c(i)","H2023:mc2","H2023:L2a(ii)","H2026:L2b","H2026:L8b(ii)","R2014:L3b","R2014:L7c(iii)","R2015:L10d(i)","O2000:L16b","O2002:L7b","O2003:mc12","O2003:L12","O2004:L14a(iii)","O2005:L9a","O2006:L11c","O2007:L13a","O2008:mc13","O2009:mc13","O2010:mc12","O2011:L6b","O2012:L7c","O2014:mc16","O2014:L4a","O2014:L12d(ii)","O2015:L13a"],"23/24":["H2020:mc5","H2020:L5c(i)","R2012:mc6","R2013:mc6","R2013:L4d","R2013:L6b","O2006:mc14","O2012:mc11","O2013:mc16","O2013:L10b"],"25":["R2012:L4a","R2012:L15"],"28":["H2016:L5c(ii)","H2024:L5d(iv)B","H2025:L10b","R2012:mc7","R2012:L10a","R2013:mc14","R2013:L3a","R2014:mc6","O2003:mc11","O2007:mc9","O2012:mc14","O2013:L6a"],"29":["H2015:L6b","H2016:mc6","H2017:mc2","H2017:L5c(ii)","H2019:L4d(i)","H2024:L5d(iv)C","H2025:L5a","R2014:mc14"],"30/31/32":["H2020:L4c(ii)","H2026:mc5","R2012:mc8","O2002:mc27","O2002:L15a(ii)","O2005:mc38","O2007:mc38","O2009:mc2"],"33/35a":["R2013:L10a","O2003:mc37","O2004:mc38","O2008:mc38","O2010:mc39","O2013:L16a"],"34/35b":["H2020:L6b(ii)","H2023:L6d(ii)","R2014:mc8","O2014:mc37"],"36/37":["H2020:mc4","R2012:mc5","O2012:mc3"],"38/42/43":["H2015:mc20","H2016:mc19","H2017:mc13","H2018:mc18","H2022:mc4","H2023:L1b(iii)","H2024:mc5","H2025:mc2","R2012:L1a(iii)","R2012:L13a","R2013:mc7","R2014:mc7","R2015:mc6"],"39c":["H2019:mc3","H2024:L1d(ii)"],"40":["H2017:L9b(i)","R2015:L10a"],"44":["H2015:L12a(ii)","H2016:mc18","H2016:L11b(ii)","H2017:L6a(iii)B","H2018:mc19","H2018:L11b","H2019:L12d(i)","H2022:L5b(i)","H2022:L5b(ii)","H2023:mc14","H2025:L10e","H2026:L7c(iii)C","R2012:mc9","R2013:L2b","R2014:L11a","R2015:L10b(ii)","O2000:mc27","O2000:L15a","O2001:L14a","O2003:L8a(iii)","O2004:mc37","O2004:L12b","O2005:L6a(ii)","O2006:mc37","O2006:L10a","O2007:mc37","O2008:L17a","O2009:L18a","O2010:L16b(ii)","O2011:mc37","O2012:mc37","O2013:L17b","O2015:L13b(i)"],"45":["H2019:mc4","H2022:mc5","H2023:L6d(i)","H2024:mc4","H2024:L9b(ii)","H2025:L6a","H2025:L6b","H2026:mc6","H2026:mc13","H2026:L7c(iii)D","R2012:L5b","O2001:L14b","O2002:L15a(i)","O2003:mc36","O2005:L13a(i)","O2006:L15a","O2007:L15a","O2008:mc37","O2009:mc37","O2011:mc38","O2012:L5b"],"171":["H2015:L10a(i)","H2015:L12a(i)","H2016:mc20","H2016:L5c(i)","H2017:L3","H2017:L7b(iii)D","H2020:L9a(iii)","H2022:mc16","H2022:mc25","H2022:L11c(i)","H2023:L4","H2025:mc24","H2025:L4c(ii)A","H2026:L11b(ii)","R2015:mc30","R2015:L10b(i)"],"175":["H2015:L12a(iii)","H2016:L11b(iv)","H2017:L7b(iii)B","H2018:L11c(ii)","H2019:L10b(iii)","H2019:L10c","H2019:L12d(ii)","H2022:L8c","H2022:L11d","H2023:L7a(iii)","H2024:L7b(iii)B","H2024:L7b(iii)C","H2025:mc3","H2025:L4c(ii)B","H2025:L4c(ii)C","H2025:L11","H2026:mc22","H2026:L11b(iii)B","R2012:L6c(iii)","R2013:L10b(ii)","R2014:L5a(iv)","R2015:L10b(iii)"],"27":["O2002:mc7"]},"papers":{"H2015":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2015_paper.pdf","H2016":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2016_paper.pdf","H2017":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2017_paper.pdf","H2018":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2018_paper.pdf","H2019":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2019_paper.pdf","H2020":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2020_paper.pdf","H2022":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2022_paper.pdf","H2023":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2023_paper.pdf","H2024":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2024_paper.pdf","H2025":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2025_paper.pdf","H2026":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_higher/2026_paper.pdf","R2012":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_revised_higher/2012_paper.pdf","R2013":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_revised_higher/2013_paper.pdf","R2014":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_revised_higher/2014_paper.pdf","R2015":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_revised_higher/2015_paper.pdf","O2000":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2000_paper.pdf","O2001":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2001_paper.pdf","O2002":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2002_paper.pdf","O2003":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2003_paper.pdf","O2004":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2004_paper.pdf","O2005":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2005_paper.pdf","O2006":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2006_paper.pdf","O2007":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2007_paper.pdf","O2008":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2008_paper.pdf","O2009":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2009_paper.pdf","O2010":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2010_paper.pdf","O2011":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2011_paper.pdf","O2012":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2012_paper.pdf","O2013":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2013_paper.pdf","O2014":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2014_paper.pdf","O2015":"https://jabchem.org.uk/files/chemistry/higher/sqa_past_papers_old_higher/2015_paper.pdf"},"assessment":{"assessment":"Higher Chemistry Unit 1 AB Test","total":30,"skills":{"MC":"Multiple choice","RECALL":"State / recall","EXPLAIN":"Explain (2-3 mark)","OE":"Open-ended","CALC":"Calculation","EQN":"Writing equations","DATA":"Data / pattern / problem solving"},"questions":[{"q":"1","marks":1,"outcomes":["3"],"skill":"MC","note":"Structure of diamond"},{"q":"2","marks":1,"outcomes":["5"],"skill":"MC","note":"Total of 1st and 2nd ionisation energies"},{"q":"3","marks":1,"outcomes":["7"],"skill":"MC","note":"Greatest attraction for bonding electrons"},{"q":"4","marks":1,"outcomes":["12a","7"],"skill":"MC","note":"Most ionic character"},{"q":"5","marks":1,"outcomes":["15"],"skill":"MC","note":"Not a van der Waals force"},{"q":"6","marks":1,"outcomes":["28","13"],"skill":"MC","note":"Solubility in CCl₄"},{"q":"7","marks":1,"outcomes":["19"],"skill":"MC","note":"Polarity from molecular shape"},{"q":"8","marks":1,"outcomes":["38/42/43","36/37"],"skill":"MC","note":"Strongest reducing agent"},{"q":"9","marks":1,"outcomes":["21/22c"],"skill":"MC","note":"Order of bond and force strengths"},{"q":"10","marks":1,"outcomes":["38/42/43","33/35a"],"skill":"MC","note":"Which ion oxidises iodide"},{"q":"11a","marks":2,"outcomes":["3"],"skill":"RECALL","note":"Bonding and structure of elements"},{"q":"11bi","marks":2,"outcomes":["8"],"skill":"EXPLAIN","note":"Electronegativity across period 2"},{"q":"11bii","marks":1,"outcomes":["7"],"skill":"EXPLAIN","note":"Noble gases and electronegativity"},{"q":"12","marks":3,"outcomes":["3","17","23/24"],"skill":"OE","note":"Melting points of non-metal elements"},{"q":"13","marks":1,"outcomes":["4","11"],"skill":"DATA","note":"Lattice enthalpy and ion size"},{"q":"14","marks":3,"outcomes":["17","18/20","23/24"],"skill":"EXPLAIN","note":"Boiling points of ICl and Br₂"},{"q":"15a","marks":3,"outcomes":["171","175"],"skill":"CALC","note":"Mass of alcohol from a redox titration"},{"q":"15b","marks":1,"outcomes":["39b","44"],"skill":"EXPLAIN","note":"Why dichromate is acidified"},{"q":"16a","marks":1,"outcomes":["44"],"skill":"EQN","note":"Ion-electron equation: ClO₃⁻ to Cl₂"},{"q":"16b","marks":1,"outcomes":["33/35a"],"skill":"RECALL","note":"Oxidising or reducing agent"},{"q":"17","marks":2,"outcomes":[],"skill":"DATA","note":"Counting electron pairs (follow the method)"}],"id":"u1ab","title":"Unit 1 test: from marks to a revision plan"}};
+
+const SECTIONS = {
+  "1.1": "Periodicity", "1.2a": "Types of chemical bond", "1.2b": "Intermolecular forces",
+  "1.3": "Oxidising and reducing agents", "3.5b": "Volumetric titrations (Unit 3)"
+};
+const OUT = {
+  "3": ["1.1", "Bonding and structure of the first 20 elements", "26"],
+  "4": ["1.1", "Covalent radius trends", "27–28"],
+  "5": ["1.1", "Ionisation energy", "29–30"],
+  "6": ["1.1", "Explaining ionisation energy trends", "31–32"],
+  "7": ["1.1", "Electronegativity", "33–34"],
+  "8": ["1.1", "Explaining electronegativity trends", "35–36"],
+  "9": ["1.2a", "Covalent bonds", "23, 37"],
+  "10a": ["1.2a", "Polar covalent bonds", "38"],
+  "10b": ["1.2a", "Partial charges, δ+ and δ−", "39–40"],
+  "11": ["1.2a", "Ionic bonding and lattices", ""],
+  "12a": ["1.2a", "The bonding continuum", "41"],
+  "13": ["1.2a", "Working out bonding from properties", "42–43"],
+  "15": ["1.2b", "Types of van der Waals forces", "45"],
+  "16": ["1.2b", "London dispersion forces", "47"],
+  "17": ["1.2b", "Strength of London dispersion forces", "49"],
+  "18/20": ["1.2b", "Permanent dipoles", "51"],
+  "19": ["1.2b", "Polarity and molecular shape", "52"],
+  "21/22c": ["1.2b", "Comparing bond and force strengths", "53, 56"],
+  "22a/22b": ["1.2b", "Hydrogen bonding", "55"],
+  "23/24": ["1.2b", "Forces vs melting point, boiling point and viscosity", "57–59"],
+  "28": ["1.2b", "Polar and non-polar solvents", "63–64"],
+  "29": ["1.2b", "Predicting solubility", "65–66"],
+  "33/35a": ["1.3", "Oxidising agents", "36a, 37a"],
+  "34/35b": ["1.3", "Reducing agents", "36b, 37b"],
+  "36/37": ["1.3", "Electronegativity and redox", "38–39"],
+  "38/42/43": ["1.3", "Strongest oxidising and reducing agents", "40"],
+  "39b": ["1.3", "Acidified dichromate and permanganate", "43"],
+  "44": ["1.3", "Ion-electron equations", "46"],
+  "45": ["1.3", "Redox equations", "47"],
+  "171": ["3.5b", "Titration calculations", ""],
+  "175": ["3.5b", "Redox titration calculations", ""]
+};
+// If an outcome's own question pool runs dry, borrow from closely related outcomes
+const FALLBACK = {
+  "39b": ["44", "45"], "15": ["21/22c", "16"], "11": ["12a", "13"], "33/35a": ["38/42/43", "44"],
+  "7": ["8"], "8": ["7"], "12a": ["10a"], "3": ["13"], "171": ["175"], "175": ["171"],
+  "28": ["29"], "19": ["18/20"], "23/24": ["17", "22a/22b"], "21/22c": ["22a/22b"], "36/37": ["38/42/43"],
+  "16": ["17"], "4": ["6"], "5": ["6"], "13": ["3"], "17": ["16"], "18/20": ["19"], "44": ["45"]
+};
+const SKILLS = {
+  MC:      ["Multiple choice", "Answer in your head before looking at the options, then find the match. Check the data booklet for every value."],
+  RECALL:  ["State and recall", "Turn your traffic light sheet into flashcards and test yourself. Don't just re-read."],
+  EXPLAIN: ["Explain questions", "One clear point per mark. Link cause to effect with \"because\" or \"so\". Name the type of force or particle."],
+  OE:      ["Open-ended questions", "State the key idea, apply it to the example given, then push one step further. Diagrams and equations count."],
+  CALC:    ["Calculations", "Write every step: n = c × V, the mole ratio from the equation, then the answer with units."],
+  EQN:     ["Writing equations", "Use the five-step method: balance the atoms, add H₂O for O, add H⁺ for H, then e⁻ for charge."],
+  DATA:    ["Data and problem solving", "Read the stem twice. Underline what changes and what stays the same before you write."]
+};
+const REASONS = ["I didn't know it", "I knew it but couldn't explain it", "I misread the question", "Careless slip", "I ran out of time", "I didn't revise this"];
+const FINAL_SET = 6;
+const ITEMS_PER_VISIT = 2;
+const VISITS_PER_SESSION = 3;
+const H_PAPERS = Object.keys(DATA.papers).filter(k => k[0] === "H").length;
+
+/* ---------- storage (best effort) ---------- */
+const KEY = "rp:" + DATA.assessment.id + ":v1";
+let S = { name: "", cls: "", marks: {}, reasons: {}, pledge: "", weeks: 3, spw: 3, salt: 0, done: {}, rate: {}, step: "marks" };
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function band(p) { return p == null ? "u" : p < 0.5 ? "r" : p < 0.8 ? "a" : "g"; }
+function pct(p) { return p == null ? "–" : Math.round(p * 100) + "%"; }
+function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function shuffle(arr, r) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+const QS = DATA.assessment.questions;
+const TOTAL = QS.reduce((s, q) => s + q.marks, 0);
+
+// how often each outcome appears in current Higher papers
+const FREQ = {};
+for (const [k, refs] of Object.entries(DATA.bank)) FREQ[k] = new Set(refs.filter(r => r[0] === "H").map(r => r.slice(1, 5))).size;
+
+function parseRef(r) {
+  const [paper, ref] = r.split(":");
+  const series = paper[0], year = paper.slice(1);
+  const mc = ref.startsWith("mc");
+  const num = mc ? ref.slice(2) : ref.replace(/^L/, "");
+  const seriesName = series === "H" ? "Higher" : series === "R" ? "Revised Higher" : "Higher (pre-2015 course)";
+  const part = series === "H" ? (mc ? "Paper 1" : "Paper 2") : (mc ? "Section A" : "Section B");
+  return { key: r, series, year, mc, label: `${year} ${seriesName}`, q: `${part}, Q${num}`, url: DATA.papers[paper] || "#" };
+}
+
+/* ---------- analysis ---------- */
+function analyse() {
+  const o = {}, sk = {};
+  let got = 0, entered = 0;
+  for (const q of QS) {
+    const m = S.marks[q.q];
+    if (m == null) continue;
+    entered++; got += m;
+    sk[q.skill] = sk[q.skill] || { g: 0, m: 0 };
+    sk[q.skill].g += m; sk[q.skill].m += q.marks;
+    q.outcomes.forEach((k, i) => {
+      const w = i === 0 ? 1 : 0.5;
+      o[k] = o[k] || { g: 0, m: 0, qs: [] };
+      o[k].g += w * m; o[k].m += w * q.marks; o[k].qs.push(q.q);
+    });
+  }
+  const outcomes = Object.entries(o).map(([k, v]) => {
+    const p = v.g / v.m;
+    const imp = 0.6 + 0.4 * (FREQ[k] || 0) / H_PAPERS;
+    return { k, p, qs: v.qs, freq: FREQ[k] || 0, score: (1 - p) * imp, band: band(p) };
+  }).sort((a, b) => b.score - a.score || a.p - b.p);
+  const sections = {};
+  for (const x of outcomes) {
+    const s = OUT[x.k][0];
+    sections[s] = sections[s] || { g: 0, m: 0 };
+  }
+  for (const q of QS) {
+    const m = S.marks[q.q]; if (m == null || !q.outcomes.length) continue;
+    const s = OUT[q.outcomes[0]][0];
+    sections[s] = sections[s] || { g: 0, m: 0 };
+    sections[s].g += m; sections[s].m += q.marks;
+  }
+  return { got, entered, outcomes, skills: sk, sections };
+}
+
+/* ---------- plan engine ---------- */
+function buildPlan(A) {
+  const T = S.weeks * S.spw;
+  const slots = Math.max(T - 1, 1);           // last session is the mixed mini-paper
+  const cap = slots * VISITS_PER_SESSION;
+  const r = rng(hash(JSON.stringify(S.marks) + "|" + S.salt));
+
+  const weak = A.outcomes.filter(x => x.band !== "g");
+  const strong = A.outcomes.filter(x => x.band === "g");
+  const tested = new Set(A.outcomes.map(x => x.k));
+  const untested = Object.keys(OUT).filter(k => !tested.has(k) && (FREQ[k] || 0) >= 5)
+    .sort((a, b) => FREQ[b] - FREQ[a]).map(k => ({ k, p: null, band: "u", freq: FREQ[k], review: true }));
+
+  // allocate visits in passes so every weak outcome gets a first look before anything gets a third
+  const want = new Map();
+  weak.forEach(x => want.set(x.k, x.band === "r" ? 3 : 2));
+  const nFocus = Math.max(3, Math.round(cap / 2.4));
+  const focus = weak.slice(0, nFocus), rest = weak.slice(nFocus);
+  const order = [];
+  const passes = [[focus, 1], [focus, 2], [rest, 1], [focus, 3], [untested, 1], [strong, 1]];
+  for (const [list, pass] of passes) {
+    for (const x of list) {
+      if (order.length >= cap) break;
+      const n = want.has(x.k) ? want.get(x.k) : 1;
+      if (list === rest) { order.push({ o: x, pass: 1, late: true }); continue; }
+      if (pass <= n || (list === untested || list === strong) && pass === 1) order.push({ o: x, pass });
+    }
+  }
+  // place visits: first passes early, later passes spread later (spaced practice)
+  const startFrac = { 1: 0, 2: 0.4, 3: 0.72 };
+  const sessions = Array.from({ length: slots }, () => []);
+  const passCount = {};
+  for (const v of order) {
+    passCount[v.pass] = (passCount[v.pass] || 0) + 1;
+    const review = v.o.review || v.o.band === "g";
+    let target = review ? Math.floor(slots * 0.45) : v.late ? Math.floor(slots * 0.3) : Math.floor(slots * startFrac[v.pass]);
+    let placed = false;
+    for (let pass = 0; pass < 2 && !placed; pass++) {
+      for (let i = pass ? 0 : target; i < slots; i++) {
+        const s = sessions[i];
+        if (s.length < VISITS_PER_SESSION && !s.some(x => x.o.k === v.o.k) && !(i > 0 && sessions[i - 1].some(x => x.o.k === v.o.k) && pass === 0 && v.pass > 1)) {
+          s.push(v); placed = true; break;
+        }
+      }
+    }
+    if (!placed) v.dropped = true;
+  }
+  // choose questions
+  const used = new Set();
+  const pools = {};
+  function pool(k) {
+    if (!pools[k]) {
+      const refs = (DATA.bank[k] || []).map(parseRef);
+      const by = s => shuffle(refs.filter(x => x.series === s), r);
+      pools[k] = [...by("H"), ...by("R"), ...by("O")];
+    }
+    return pools[k];
+  }
+  function pick(k, n, preferWritten) {
+    const out = [];
+    const sources = [k, ...(FALLBACK[k] || [])];
+    const tier = x => "HRO".indexOf(x.series);
+    for (const src of sources) {
+      while (out.length < n) {
+        const avail = pool(src).filter(x => !used.has(x.key));
+        if (!avail.length) break;
+        const best = avail.filter(x => tier(x) === tier(avail[0]));   // newest course first
+        const haveMC = out.some(x => x.mc), haveL = out.some(x => !x.mc);
+        const wantMC = out.length ? !haveMC : !preferWritten;
+        const choice = best.find(x => x.mc === wantMC && !(x.mc ? haveMC : haveL)) || best[0];
+        out.push(Object.assign({ borrowed: src !== k ? src : null }, choice)); used.add(choice.key);
+      }
+      if (out.length >= n) break;
+    }
+    return out;
+  }
+  sessions.forEach(s => s.forEach(v => { v.items = pick(v.o.k, ITEMS_PER_VISIT, v.pass > 1); }));
+  // final mixed mini-paper from top weak outcomes
+  const finalItems = [];
+  for (const x of (weak.length ? weak : A.outcomes)) {
+    if (finalItems.length >= FINAL_SET) break;
+    const it = pick(x.k, 1, true)[0];
+    if (it) finalItems.push(Object.assign({ o: x }, it));
+  }
+  const dropped = order.filter(v => v.dropped && v.pass === 1 && !v.o.review && v.o.band !== "g").map(v => v.o);
+  const skipped = weak.filter(x => !order.some(v => v.o.k === x.k && !v.dropped) && !dropped.includes(x));
+  return { sessions, finalItems, dropped: [...dropped, ...skipped], T };
+}
+
+/* ---------- render: marks ---------- */
+function renderMarks() {
+  const groups = [["Section 1: multiple choice", QS.filter(q => q.skill === "MC")], ["Section 2: written answers", QS.filter(q => q.skill !== "MC")]];
+  $("#qlist").innerHTML = groups.map(([t, list]) => `
+    <div class="group-title">${t}</div>
+    <div class="sheet">${list.map(q => `
+      <div class="qrow">
+        <div class="qnum">Q${esc(q.q)}</div>
+        <div class="qdesc">${esc(q.note)}</div>
+        <div class="seg" role="group" aria-label="Marks for question ${esc(q.q)}">
+          ${Array.from({ length: q.marks + 1 }, (_, m) => `<button data-q="${esc(q.q)}" data-m="${m}" aria-pressed="${S.marks[q.q] === m}">${m}</button>`).join("")}
+        </div>
+      </div>`).join("")}
+    </div>`).join("");
+  updateTotal();
+}
+function updateTotal() {
+  const A = analyse();
+  $("#total").innerHTML = `${A.got} / ${TOTAL}<small>${A.entered} of ${QS.length} questions entered</small>`;
+}
+
+/* ---------- render: priorities ---------- */
+function tile(x, big) {
+  const sec = OUT[x.k] ? OUT[x.k][0] : "";
+  return `<div class="tile ${x.band}" title="${esc(OUT[x.k] ? OUT[x.k][1] : x.k)}"><span class="code">${esc(x.k)}</span><span class="big">${big != null ? big : pct(x.p)}</span><span class="sec">${esc(sec)}</span></div>`;
+}
+function renderPri() {
+  const A = analyse();
+  if (!A.entered) { $("#pri").innerHTML = `<p class="empty">Enter your marks in step 1 and your priorities will appear here.</p>`; return; }
+  const missing = QS.length - A.entered;
+  const secOrder = Object.keys(SECTIONS).filter(s => A.sections[s]);
+  const skillOrder = Object.keys(SKILLS).filter(s => A.skills[s]);
+  const lost = s => A.skills[s].m - A.skills[s].g;
+  const weakestSkill = skillOrder.slice().sort((a, b) => lost(b) - lost(a) || A.skills[a].g / A.skills[a].m - A.skills[b].g / A.skills[b].m)[0];
+  $("#pri").innerHTML = `
+    ${missing ? `<div class="note">${missing} question${missing > 1 ? "s are" : " is"} still blank, so ${missing > 1 ? "they're" : "it's"} left out. Go back to step 1 to fill ${missing > 1 ? "them" : "it"} in.</div>` : ""}
+    <div class="sheet">
+      <h3 style="margin-top:14px">Your Unit 1 table</h3>
+      <p class="tiny" style="margin:0">Each tile is a traffic light outcome. The number in the corner matches your traffic light sheet.</p>
+      <div class="table">${A.outcomes.slice().sort((a, b) => Object.keys(OUT).indexOf(a.k) - Object.keys(OUT).indexOf(b.k)).map(x => tile(x)).join("")}</div>
+      <p class="tiny" style="margin:6px 0 14px">Red under 50%. Amber 50 to 79%. Green 80% and over.</p>
+    </div>
+    <div class="sheet">
+      ${A.outcomes.filter(x => x.band !== "g").map((x, i) => `
+        <div class="prow">
+          <div class="rank">${i + 1}</div>
+          ${tile(x)}
+          <div>
+            <div class="name">${esc(OUT[x.k][1])}</div>
+            <div class="meta">${esc(SECTIONS[OUT[x.k][0]])}. Test Q${x.qs.map(esc).join(", Q")}.</div>
+            <div class="why">${x.freq ? `In ${x.freq} of the last ${H_PAPERS} Higher papers.` : "Rarely examined on its own, but it supports other questions."}</div>
+          </div>
+        </div>`).join("") || `<p class="empty">Everything is green. Your plan will keep it all fresh with mixed review.</p>`}
+    </div>
+    <div class="sheet">
+      <h3 style="margin-top:14px">By topic</h3>
+      <div class="bars">${secOrder.map(s => { const v = A.sections[s], p = v.g / v.m; return `<div class="bar ${band(p)}"><span>${esc(SECTIONS[s])}</span><span class="track"><span class="fill" style="width:${Math.max(p * 100, 2)}%;display:block"></span></span><span class="v">${pct(p)}</span></div>`; }).join("")}</div>
+    </div>
+    <div class="sheet">
+      <h3 style="margin-top:14px">By type of question</h3>
+      <div class="bars">${skillOrder.map(s => { const v = A.skills[s], p = v.g / v.m; return `<div class="bar ${band(p)}"><span>${esc(SKILLS[s][0])}</span><span class="track"><span class="fill" style="width:${Math.max(p * 100, 2)}%;display:block"></span></span><span class="v">${v.g}/${v.m}</span></div>`; }).join("")}</div>
+      ${weakestSkill && lost(weakestSkill) > 0 && A.skills[weakestSkill].g / A.skills[weakestSkill].m < 0.8 ? `<div class="note"><strong>${esc(SKILLS[weakestSkill][0])}</strong> cost you most. ${esc(SKILLS[weakestSkill][1])}</div>` : ""}
+    </div>
+    <div class="btnrow no-print"><button class="btn" data-go="refl">Reflect on these</button></div>`;
+}
+
+/* ---------- render: reflect ---------- */
+function renderRefl() {
+  const A = analyse();
+  const top = A.outcomes.filter(x => x.band !== "g").slice(0, 3);
+  if (!A.entered) { $("#refl").innerHTML = `<p class="empty">Enter your marks in step 1 first.</p>`; return; }
+  $("#refl").innerHTML = `
+    <div class="sheet">
+      ${top.map(x => `
+        <div class="refl">
+          <div class="head">${tile(x)}<div><div class="name" style="font-weight:600">${esc(OUT[x.k][1])}</div><div class="tiny">Test Q${x.qs.map(esc).join(", Q")}. Why did you lose marks?</div></div></div>
+          <div class="chips" role="group" aria-label="Reasons for ${esc(OUT[x.k][1])}">
+            ${REASONS.map(rz => `<button class="chip" data-o="${esc(x.k)}" data-r="${esc(rz)}" aria-pressed="${(S.reasons[x.k] || []).includes(rz)}">${esc(rz)}</button>`).join("")}
+          </div>
+        </div>`).join("") || `<p class="empty">No red or amber outcomes. Pick anything you felt unsure about and note it below.</p>`}
+    </div>
+    <div class="sheet" style="padding:16px 18px">
+      <label for="pledge"><h3>In the prelim, one thing I'll do differently is…</h3></label>
+      <textarea id="pledge" placeholder="e.g. show every step in calculations, even if it feels obvious">${esc(S.pledge)}</textarea>
+    </div>
+    <div class="btnrow no-print"><button class="btn" data-go="plan">Build my plan</button></div>`;
+}
+
+/* ---------- render: plan ---------- */
+function renderSettings() {
+  $("#set-weeks").innerHTML = [2, 3, 4, 5, 6].map(n => `<button data-set="weeks" data-v="${n}" aria-pressed="${S.weeks === n}">${n}</button>`).join("");
+  $("#set-spw").innerHTML = [2, 3, 4, 5].map(n => `<button data-set="spw" data-v="${n}" aria-pressed="${S.spw === n}">${n}</button>`).join("");
+}
+function itemHTML(it, sid) {
+  const id = sid + "|" + it.key;
+  return `<li><input type="checkbox" id="${esc(id)}" data-done="${esc(id)}" ${S.done[id] ? "checked" : ""} aria-label="Done">
+    <label for="${esc(id)}"><a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.label)}</a>, ${esc(it.q)}
+    ${it.borrowed ? `<span class="tag">(related: ${esc(OUT[it.borrowed] ? OUT[it.borrowed][1].toLowerCase() : it.borrowed)})</span>` : ""}</label></li>`;
+}
+function rateHTML(sid) {
+  return `<div class="rate" role="group" aria-label="How did it go?"><span class="tiny ratelab">How did it go?</span>${["r", "a", "g"].map(c => `<button class="${c}" data-rate="${sid}" data-v="${c}" aria-pressed="${S.rate[sid] === c}" aria-label="${{ r: "Red", a: "Amber", g: "Green" }[c]}"></button>`).join("")}</div>`;
+}
+function renderPlan() {
+  renderSettings();
+  const A = analyse();
+  if (!A.entered) { $("#plan").innerHTML = `<p class="empty">Enter your marks in step 1 and your plan will be built here.</p>`; return; }
+  const P = buildPlan(A);
+  let html = "";
+  let idx = 0;
+  for (let w = 0; w < S.weeks; w++) {
+    html += `<div class="week"><h3>Week ${w + 1}</h3>`;
+    for (let s = 0; s < S.spw; s++, idx++) {
+      const sid = "s" + idx;
+      if (idx === P.T - 1) {
+        html += `<div class="session final"><div class="shead"><span class="t">Session ${idx + 1}: mixed mini-paper</span>${rateHTML(sid)}</div>
+          <p style="margin:4px 0 8px">Closed book, one sitting, no notes. These mix your priorities like the prelim will. Mark it, then compare with your first attempt.</p>
+          <ul class="items" style="margin-left:0">${P.finalItems.map(it => itemHTML(it, sid)).join("")}</ul></div>`;
+        continue;
+      }
+      const visits = P.sessions[idx] || [];
+      html += `<div class="session"><div class="shead"><span class="t">Session ${idx + 1}</span>${rateHTML(sid)}</div>
+        ${visits.length ? visits.map(v => {
+          const o = OUT[v.o.k];
+          const lead = v.o.review ? "Not in this test, but in " + v.o.freq + " of " + H_PAPERS + " papers." : v.pass === 1 ? "First look." : v.pass === 2 ? "Second go: try it without notes." : "Third go: closed book, timed.";
+          const notes = o[2] && v.pass === 1 ? ` Read notes p.${o[2]} first.` : "";
+          return `<div class="focus"><div class="mini ${v.o.band}">${esc(v.o.k)}</div><div><div class="fname">${esc(o[1])}</div><div class="fsub">${lead}${notes}</div></div></div>
+            <ul class="items">${v.items.map(it => itemHTML(it, sid)).join("") || `<li class="tiny">No past paper questions for this one. Revise from your notes and write a summary.</li>`}</ul>`;
+        }).join("") : `<p class="tiny">Catch-up session: redo any question you marked red.</p>`}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  if (P.dropped.length) html += `<div class="note">Not enough sessions to fit everything. Also revise: ${P.dropped.map(o => esc(OUT[o.k][1])).join("; ")}. Add a week or a session per week to fit them in.</div>`;
+  $("#plan").innerHTML = html;
+
+  // print header summary
+  const top = A.outcomes.filter(x => x.band !== "g").slice(0, 3);
+  $("#print-intro").innerHTML = `<p><strong>Score:</strong> ${A.got}/${TOTAL}. <strong>Top priorities:</strong> ${top.map(x => esc(OUT[x.k][1])).join("; ") || "none"}.</p>
+    ${S.pledge ? `<p><strong>In the prelim I will:</strong> ${esc(S.pledge)}</p>` : ""}`;
+}
+
+/* ---------- navigation ---------- */
+const RENDER = { marks: renderMarks, pri: renderPri, refl: renderRefl, plan: renderPlan };
+function go(step) {
+  S.step = step; save();
+  document.querySelectorAll("section.panel").forEach(p => p.classList.toggle("on", p.id === "p-" + step));
+  document.querySelectorAll("nav.steps button").forEach(b => b.dataset.step === step ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current"));
+  RENDER[step]();
+  window.scrollTo({ top: 0 });
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.step) return go(b.dataset.step);
+  if (b.dataset.go) return go(b.dataset.go);
+  if (b.dataset.q) {
+    const q = b.dataset.q, m = +b.dataset.m;
+    if (S.marks[q] === m) delete S.marks[q]; else S.marks[q] = m;
+    save();
+    b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(S.marks[q] === +x.dataset.m)));
+    return updateTotal();
+  }
+  if (b.dataset.r) {
+    const o = b.dataset.o, rz = b.dataset.r;
+    const list = S.reasons[o] = S.reasons[o] || [];
+    const i = list.indexOf(rz); if (i >= 0) list.splice(i, 1); else list.push(rz);
+    b.setAttribute("aria-pressed", String(i < 0)); return save();
+  }
+  if (b.dataset.set) { S[b.dataset.set] = +b.dataset.v; save(); return renderPlan(); }
+  if (b.dataset.rate) {
+    const id = b.dataset.rate; S.rate[id] = S.rate[id] === b.dataset.v ? null : b.dataset.v; save();
+    return b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(S.rate[id] === x.dataset.v)));
+  }
+  if (b.id === "print") return window.print();
+  if (b.id === "shuffle") { S.salt++; save(); return renderPlan(); }
+  if (b.id === "copy") return copyResults(b);
+});
+document.addEventListener("change", e => {
+  if (e.target.dataset.done) { S.done[e.target.dataset.done] = e.target.checked; save(); }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "pledge") { S.pledge = e.target.value; save(); }
+  if (e.target.id === "name") { S.name = e.target.value; save(); }
+  if (e.target.id === "cls") { S.cls = e.target.value; save(); }
+});
+
+function copyResults(btn) {
+  const A = analyse();
+  const top = A.outcomes.filter(x => x.band !== "g").slice(0, 3).map(x => x.k).join(", ");
+  const txt = `${S.name || "(no name)"}\t${S.cls}\t${DATA.assessment.id}\t${A.got}/${TOTAL}\tPriorities: ${top}\t` + QS.map(q => `Q${q.q}=${S.marks[q.q] ?? "-"}`).join(" ");
+  const done = () => { const t = btn.textContent; btn.textContent = "Copied. Paste it where your teacher asked."; setTimeout(() => btn.textContent = t, 2500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => fallbackCopy(txt, done));
+  else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, done) {
+  const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) { prompt("Copy this:", txt); }
+  ta.remove();
+}
+
+/* ---------- start ---------- */
+$("#title").textContent = DATA.assessment.title;
+$("#name").value = S.name; $("#cls").value = S.cls;
+window.addEventListener("beforeprint", () => { RENDER.pri(); RENDER.refl(); RENDER.plan(); });
+go(S.step || "marks");
+</script>
+</body>
+</html>
